@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#090b12">
+  <meta name="description" content="NEOCX — ruang kerja HTML interaktif untuk menulis, menjalankan, dan melihat preview HTML secara langsung.">
+  <meta name="application-name" content="NEOCX">
+  <meta name="apple-mobile-web-app-title" content="NEOCX">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>NEOCX — App Preview</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b12;
+      --surface: #111521;
+      --surface-2: #171d2b;
+      --line: rgba(255,255,255,.09);
+      --text: #f3f5fb;
+      --muted: #8d96aa;
+      --accent: #8a7cff;
+      --accent-2: #46d9d0;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html {
+      width:100%; min-height:100%; height:auto; margin:0;
+      overflow-x:hidden; overflow-y:auto;
+      background:var(--bg); overscroll-behavior-y:auto;
+      -webkit-overflow-scrolling:touch; touch-action:pan-y;
+    }
+    body {
+      display:block; position:relative; width:100%; min-width:0;
+      min-height:100vh; min-height:100dvh; height:auto; margin:0;
+      overflow:visible; background:var(--bg); color:var(--text);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      overscroll-behavior-y:auto; user-select:none; -webkit-user-select:none;
+      -webkit-touch-callout:none; touch-action:pan-y;
+      -webkit-overflow-scrolling:touch;
+    }
+    #ambient {
+      position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none;
+      opacity: .5; z-index: 0;
+    }
+    .app {
+      position: relative; z-index: 1; display:flex; flex:0 0 auto;
+      flex-direction:column; min-height:100vh; min-height:100dvh;
+      height:auto; width:100%; overflow:visible; touch-action:pan-y;
+      padding: calc(22px + var(--safe-top)) calc(22px + var(--safe-right)) calc(24px + var(--safe-bottom)) calc(22px + var(--safe-left));
+    }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .brand { display:flex; align-items:center; gap:12px; min-width:0; }
+    .brand-mark {
+      width:42px; height:42px; border:1px solid rgba(255,255,255,.15); border-radius:14px;
+      display:grid; place-items:center; background:linear-gradient(145deg,rgba(138,124,255,.22),rgba(70,217,208,.08));
+      box-shadow:0 8px 30px rgba(94,83,210,.16), inset 0 1px rgba(255,255,255,.12);
+    }
+    .brand-mark svg { width:24px; height:24px; }
+    .brand-name { font-size:15px; font-weight:800; letter-spacing:.19em; }
+    main {
+      display:block; flex:0 0 auto; width:100%; min-height:0;
+      padding:12px 0 24px; overflow:visible; touch-action:pan-y;
+    }
+    .hero { width:min(100%, 520px); margin:0 auto; text-align:center; animation:enter .8s cubic-bezier(.2,.8,.2,1) both; }
+    .orb-wrap { width:88px; height:88px; margin:0 auto 17px; position:relative; display:grid; place-items:center; }
+    .orb {
+      position:absolute; inset:0; border-radius:36px; transform:rotate(45deg);
+      background:linear-gradient(145deg,rgba(138,124,255,.18),rgba(70,217,208,.08));
+      border:1px solid rgba(180,174,255,.22); box-shadow:0 0 65px rgba(117,101,255,.15), inset 0 0 30px rgba(255,255,255,.025);
+      animation:float 5s ease-in-out infinite;
+    }
+    .orb::after { content:""; position:absolute; inset:13px; border:1px solid rgba(255,255,255,.1); border-radius:25px; }
+    .orb-logo { position:relative; z-index:1; width:40px; height:40px; filter:drop-shadow(0 0 18px rgba(138,124,255,.45)); }
+    .orb-download { position:relative; z-index:2; display:grid; place-items:center; width:100%; height:100%; padding:0; border:0; border-radius:30px; background:transparent; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .2s ease,filter .2s ease; }
+    .orb-download:active { transform:scale(.91); }
+    .orb-download:focus-visible { outline:2px solid var(--accent-2); outline-offset:5px; }
+    .workspace-head-actions { display:flex; align-items:center; gap:9px; }
+    .visually-hidden { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
+    .eyebrow { color:var(--accent-2); font-size:10px; letter-spacing:.28em; font-weight:800; margin-bottom:14px; }
+    h1 { margin:0; font-size:clamp(36px, 8vw, 58px); letter-spacing:-.065em; line-height:1.02; font-weight:800; }
+    .gradient { background:linear-gradient(100deg,#f5f4ff 15%,#a99fff 58%,#73e4dc 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .desc { color:var(--muted); font-size:13px; line-height:1.65; max-width:360px; margin:10px auto 0; }
+    .workspace {
+      display:block; flex:0 0 auto; margin:17px auto 0; width:min(100%,560px); padding:15px; border:1px solid var(--line);
+      border-radius:20px; background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+      box-shadow:0 20px 70px rgba(0,0,0,.2); text-align:left;
+    }
+    .workspace-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:13px; }
+    .panel-label { color:#c2c8d7; font-size:10px; font-weight:800; letter-spacing:.14em; }
+    .workspace-state { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:10px; }
+    .live-dot { width:7px; height:7px; border-radius:50%; background:var(--accent-2); box-shadow:0 0 12px rgba(70,217,208,.8); }
+    .editor-wrap { border:1px solid rgba(255,255,255,.08); border-radius:13px; overflow:hidden; background:#080b12; }
+    .editor-bar { height:34px; display:flex; align-items:center; justify-content:space-between; padding:0 11px; color:#8791a7; font-size:10px; border-bottom:1px solid rgba(255,255,255,.07); }
+    .editor-lights { display:flex; gap:5px; }
+    .editor-lights i { width:7px; height:7px; border-radius:50%; background:#555c6e; }
+    .code-stage { position:relative; min-height:145px; }
+    .code-highlight,.code-editor {
+      display:block; width:100%; min-height:145px; margin:0; padding:13px;
+      border:0; font:11px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;
+      white-space:pre; tab-size:2; overflow:auto; overflow-wrap:normal;
+    }
+    .code-highlight {
+      position:absolute; inset:0; pointer-events:none; color:#d7d9f5;
+      background:transparent; scrollbar-width:none;
+    }
+    .code-highlight code { font:inherit; }
+    .code-editor {
+      position:relative; z-index:1; resize:vertical; outline:0;
+      background:transparent; color:transparent; -webkit-text-fill-color:transparent;
+      caret-color:#f4f5fb; text-shadow:none; user-select:text; -webkit-user-select:text;
+      -webkit-touch-callout:default; touch-action:pan-x pan-y;
+    }
+    .code-editor::selection { background:rgba(138,124,255,.32); }
+    .code-toolbar {
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      width:100%; min-width:0; margin:8px 1px 0;
+    }
+    .code-meta {
+      display:flex; align-items:center; gap:6px; min-width:0; flex:1 1 auto;
+      margin:0; color:#8992a6; font-size:10px; line-height:1.4;
+      font-variant-numeric:tabular-nums; white-space:nowrap;
+    }
+    .code-icon-actions {
+      display:flex; align-items:center; justify-content:flex-end; gap:3px;
+      flex:0 0 auto;
+    }
+    .icon-tool {
+      display:grid; place-items:center; width:29px; height:29px; flex:0 0 29px;
+      padding:0; border:0; border-radius:8px; color:#aeb7ca;
+      background:transparent; cursor:pointer;
+      transition:color .18s ease,background .18s ease,transform .18s ease;
+    }
+    .icon-tool svg { width:15px; height:15px; stroke:currentColor; }
+    .icon-tool:active { transform:scale(.9); background:rgba(138,124,255,.14); }
+    .icon-tool.active { color:#73e4dc; background:rgba(70,217,208,.09); }
+    .icon-tool:focus-visible { outline:1px solid var(--accent); outline-offset:1px; }
+    .icon-tool[disabled] { opacity:.4; cursor:default; }
+    .code-meta-separator { color:#566075; }
+    .tok-tag { color:#ff7b9c; }
+    .tok-attr { color:#9cdcfe; }
+    .tok-string { color:#ce9178; }
+    .tok-comment { color:#7f899e; font-style:italic; }
+    .tok-doctype { color:#c586c0; }
+    .tok-keyword { color:#c792ea; }
+    .tok-number { color:#f6c177; }
+    .tok-property { color:#82aaff; }
+    .tok-punctuation { color:#8993a8; }
+    .code-loading {
+      position:absolute; inset:0; z-index:3; display:none; align-items:center; justify-content:center;
+      gap:9px; color:#c9c5ff; background:rgba(8,11,18,.9); font-size:11px; font-weight:800;
+      letter-spacing:.1em; pointer-events:none;
+    }
+    .code-loading.show { display:flex; }
+    .loading-spinner { width:14px; height:14px; border:2px solid rgba(169,159,255,.25);
+      border-top-color:#a99fff; border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .workspace-actions {
+      display:flex; flex-wrap:wrap; justify-content:center; align-items:center;
+      gap:9px; margin-top:12px; width:100%;
+    }
+    .run-btn,.reset-btn,.tool-btn {
+      border-radius:13px; padding:11px 16px; min-height:42px;
+      font-size:11px; font-weight:800; letter-spacing:.04em;
+      cursor:pointer; transition:transform .18s ease,filter .18s ease,background .18s ease;
+    }
+    .run-btn { flex:1 1 100%; min-width:100%; color:#090b12; background:linear-gradient(100deg,#a99fff,#73e4dc); box-shadow:0 7px 22px rgba(138,124,255,.18); }
+    .reset-btn,.tool-btn {
+      flex:0 1 auto; min-width:76px; color:#c3c9d8;
+      background:rgba(255,255,255,.055); border:1px solid var(--line);
+      border-radius:13px; padding:10px 16px;
+    }
+    .tool-btn.active { color:#73e4dc; border-color:rgba(70,217,208,.38); background:rgba(70,217,208,.08); }
+    .run-btn:active,.reset-btn:active { transform:scale(.97); }
+    .preview-output {
+      margin-top:13px; border:1px solid var(--line); border-radius:18px;
+      overflow:hidden; background:#fff; position:relative;
+    }
+    .output-head { min-height:38px; padding:0 11px; display:flex; align-items:center; justify-content:space-between; gap:10px; color:#9aa3b6; background:#111521; font-size:10px; }
+    .output-head-right { display:flex; align-items:center; gap:10px; }
+    .fullscreen-btn {
+      color:#d8dcf0; background:rgba(255,255,255,.08); border:1px solid var(--line);
+      border-radius:10px; padding:7px 10px; font-size:10px; font-weight:700; cursor:pointer;
+      white-space:nowrap;
+    }
+    .preview-output.is-fullscreen {
+      position:fixed !important; inset:0 !important; z-index:2147483000 !important;
+      width:100vw !important; height:100vh !important; height:100dvh !important;
+      max-width:100vw !important; max-height:100vh !important; max-height:100dvh !important;
+      margin:0 !important; padding:0 !important; box-sizing:border-box !important;
+      border-radius:0 !important; border:0 !important; left:0 !important; top:0 !important;
+      display:flex !important; flex-direction:column !important;
+      align-items:stretch !important; justify-content:flex-start !important;
+      background:#111521 !important; transform:none !important;
+    }
+    .preview-output.is-fullscreen .output-head {
+      flex:0 0 auto; padding-top:env(safe-area-inset-top, 0px);
+      min-height:calc(48px + env(safe-area-inset-top, 0px));
+    }
+    .preview-output.is-fullscreen .output-frame {
+      flex:1 1 auto !important; display:block !important; width:100% !important;
+      max-width:100% !important; height:auto !important; min-height:0 !important;
+      margin:0 auto !important; align-self:stretch !important;
+    }
+    body.output-fullscreen { overflow:hidden !important; }
+    body.output-fullscreen .app { visibility:hidden; }
+    body.output-fullscreen .preview-output.is-fullscreen { visibility:visible; }
+    .output-frame { display:block; width:100%; height:clamp(180px, 27vh, 270px); border:0; background:#fff; }
+    .workspace-note { margin:9px 2px 0; color:#778197; font-size:10px; line-height:1.5; }
+    footer { flex:0 0 auto; }
+    footer { display:flex; justify-content:center; color:#687187; font-size:10px; letter-spacing:.08em; text-align:center; }
+    @keyframes enter { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes float { 0%,100% { transform:rotate(45deg) translateY(0); } 50% { transform:rotate(45deg) translateY(-7px); } }
+    @keyframes shimmer { 0%,35% { transform:translateX(-100%); } 75%,100% { transform:translateX(100%); } }
+    @media (max-width:480px) {
+      .app { padding-left:20px; padding-right:20px; }
+      .desc { font-size:13px; }
+      .workspace { padding:12px; }
+      .code-stage,.code-highlight,.code-editor { min-height:135px; font-size:10px; }
+      .output-frame { height:clamp(180px, 25vh, 230px); }
+      .orb-wrap { width:78px; height:78px; margin-bottom:14px; }
+      .orb-logo { width:36px; height:36px; }
+      .workspace-actions { justify-content:center; gap:8px; }
+      .run-btn { flex:1 1 100%; min-width:100%; }
+      .code-toolbar { gap:4px; }
+      .code-meta { gap:4px; font-size:9px; }
+      .code-icon-actions { gap:1px; }
+      .icon-tool { width:27px; height:27px; flex-basis:27px; }
+      .icon-tool svg { width:14px; height:14px; }
+    }
+
+    .history-panel {
+      margin-top:14px; padding:14px; border:1px solid var(--line); border-radius:16px;
+      background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015));
+    }
+    .history-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .history-title { color:var(--text); font-size:10px; font-weight:800; letter-spacing:.13em; }
+    .history-count { color:var(--muted); font-size:10px; margin-left:6px; letter-spacing:0; font-weight:600; }
+    .history-clear { border:1px solid var(--line); border-radius:9px; padding:7px 10px; background:var(--surface); color:var(--muted); font:700 9px/1 inherit; cursor:pointer; }
+    .history-clear:disabled { opacity:.4; cursor:default; }
+    .history-list { display:grid; gap:7px; }
+    .history-empty { padding:13px 8px; text-align:center; color:var(--muted); font-size:11px; }
+    .history-item { display:flex; align-items:center; gap:10px; width:100%; min-width:0; padding:10px 11px;
+      border:1px solid var(--line); border-radius:11px; background:rgba(255,255,255,.025); color:var(--text); text-align:left; cursor:pointer;
+      transition:background .18s ease,border-color .18s ease,transform .18s ease; }
+    .history-item:active { transform:scale(.99); }
+    .history-item:hover { border-color:rgba(138,124,255,.4); background:rgba(138,124,255,.07); }
+    .history-item-main { display:flex; flex:1; min-width:0; flex-direction:column; gap:4px; }
+    .history-item-name { overflow:hidden; color:var(--text); font-size:11px; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+    .history-item-date { color:var(--muted); font-size:9px; }
+    .history-item-size { flex:0 0 auto; color:var(--muted); font-size:9px; }
+    .github-star { display:flex; align-items:center; justify-content:center; gap:6px; min-height:36px; padding:0 11px;
+      border:1px solid rgba(169,159,255,.28); border-radius:11px; background:rgba(138,124,255,.09); color:#c9c2ff;
+      text-decoration:none; font-size:9px; font-weight:900; letter-spacing:.08em; white-space:nowrap;
+      transition:transform .18s ease,background .18s ease,border-color .18s ease; }
+    .github-star svg { width:14px; height:14px; }
+    .github-star:active { transform:scale(.94); }
+    html[data-theme="cream"] .github-star { color:#65569c; background:rgba(118,102,189,.1); border-color:rgba(118,102,189,.25); }
+    html[data-theme="cream"] .history-panel { background:linear-gradient(145deg,rgba(255,255,255,.48),rgba(222,211,193,.4)); }
+    html[data-theme="cream"] .history-item { background:rgba(255,255,255,.24); }
+    html[data-theme="cream"] .history-clear { background:#e6dece; color:#6d6253; }
+    @media (max-width:420px) { .github-star { min-height:34px; padding:0 8px; gap:4px; font-size:8px; } .workspace-head-actions { gap:7px; } }
+
+    .install-toggle {
+      width:38px;height:38px;display:grid;place-items:center;flex:0 0 38px;
+      border:1px solid var(--line);border-radius:12px;background:var(--surface);
+      color:var(--text);cursor:pointer;
+      transition:transform .2s ease,background .25s ease,color .25s ease,box-shadow .25s ease;
+    }
+    .install-toggle svg{width:18px;height:18px}
+    .install-toggle:active{transform:scale(.92)}
+    .install-toggle[hidden]{display:none!important}
+    html[data-theme="cream"] .install-toggle{background:#e6dece;color:#675b4a;box-shadow:0 5px 20px rgba(89,72,48,.12)}
+    .theme-toggle {
+      width:38px;height:38px;display:grid;place-items:center;flex:0 0 38px;
+      border:1px solid var(--line);border-radius:12px;background:var(--surface);
+      color:var(--text);box-shadow:0 5px 22px rgba(0,0,0,.12);
+      cursor:pointer;transition:transform .2s ease,background .25s ease,color .25s ease,box-shadow .25s ease;
+    }
+    .theme-toggle:active{transform:scale(.92)}
+    .theme-toggle svg{width:18px;height:18px}
+    .theme-icon-light{display:none}
+    html[data-theme="cream"]{color-scheme:light;--bg:#eee7d9;--surface:#e6dece;--surface-2:#ddd3c1;
+      --line:rgba(79,65,48,.16);--text:#302b25;--muted:#817665;--accent:#7666bd;--accent-2:#3b918c}
+    html[data-theme="cream"] body{background:var(--bg);color:var(--text)}
+    html[data-theme="cream"] #ambient{opacity:.24}
+    html[data-theme="cream"] .workspace{background:linear-gradient(145deg,rgba(255,255,255,.54),rgba(222,211,193,.58));
+      border-color:rgba(88,72,52,.16);box-shadow:0 20px 60px rgba(89,72,48,.12)}
+    html[data-theme="cream"] .panel-label{color:#655b4d}
+    html[data-theme="cream"] .editor-wrap{background:#e0d8ca;border-color:rgba(91,77,57,.18)}
+    html[data-theme="cream"] .editor-bar{background:#d7cebd;color:#716756;border-color:rgba(91,77,57,.15)}
+    html[data-theme="cream"] .code-editor{color:#39342e;caret-color:#7666bd}
+    html[data-theme="cream"] .code-highlight{color:#39342e}
+    html[data-theme="cream"] .code-icon-actions .icon-tool{color:#665d51}
+    html[data-theme="cream"] .code-icon-actions .icon-tool.active{color:#397f79;background:rgba(59,145,140,.12)}
+    html[data-theme="cream"] .run-btn{box-shadow:0 8px 24px rgba(111,94,174,.2)}
+    html[data-theme="cream"] .theme-toggle{background:#e6dece;color:#675b4a;box-shadow:0 5px 20px rgba(89,72,48,.12)}
+    html[data-theme="cream"] .theme-icon-dark{display:none}
+    html[data-theme="cream"] .theme-icon-light{display:block}
+    html[data-theme="cream"] .orb{background:linear-gradient(145deg,rgba(118,102,189,.2),rgba(59,145,140,.12));
+      border-color:rgba(118,102,189,.28);box-shadow:0 0 65px rgba(118,102,189,.2),inset 0 0 30px rgba(255,255,255,.22)}
+    html[data-theme="cream"] .orb-logo{filter:drop-shadow(0 0 18px rgba(118,102,189,.35))}
+    html[data-theme="cream"] .gradient{background:linear-gradient(100deg,#51467e 15%,#7666bd 58%,#398c87 100%);
+      -webkit-background-clip:text;background-clip:text}
+    html[data-theme="cream"] .eyebrow{color:#397f79}
+    html[data-theme="cream"] footer{color:#827765}
+    html[data-theme="cream"] .desc{color:#786e60}
+    html[data-theme="cream"] .workspace-note{color:#817665}
+    html[data-theme="cream"] .live-dot{box-shadow:0 0 12px rgba(59,145,140,.45)}
+    html[data-theme="cream"] .icon-tool:active{background:rgba(118,102,189,.13)}
+    html[data-theme="cream"] .output-head{background:#d9d0c0;color:#5f5548}
+    html[data-theme="cream"] .preview-output{border-color:rgba(79,65,48,.18)}
+    html[data-theme="cream"] .fullscreen-btn{color:#5f5548}
+
+    @media (prefers-reduced-motion:reduce) {
+      *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="ambient" aria-hidden="true"></canvas>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-name">NEOCX</span>
+      </div>
+
+    </header>
+
+    <main>
+      <section class="hero" aria-label="NEOCX application preview">
+        <div class="orb-wrap">
+          <div class="orb"></div>
+          <button class="orb-download" id="installAppBtn" type="button" aria-label="Download atau install NEOCX" title="Download / Install NEOCX">
+            <svg class="orb-logo" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path d="M7 36V12l17 17 17-17v24" stroke="#F2F0FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M7 12l17 17 17-17" stroke="#8A7CFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="eyebrow">APPLICATION PREVIEW</div>
+        <h1><span class="gradient">NEOCX</span></h1>
+        <p class="desc">Tulis kode HTML, jalankan, dan lihat hasilnya langsung di workspace NEOCX.</p>
+
+        <section class="workspace" aria-label="HTML workspace">
+          <div class="workspace-head">
+            <span class="panel-label">WORKSPACE PREVIEW</span>
+            <div class="workspace-head-actions">
+              <a class="github-star" id="githubStarBtn" href="https://github.com/neeopstudio/neocx" target="_blank" rel="noopener noreferrer" aria-label="Star NEOCX di GitHub" title="Buka repository NEOCX untuk memberi Star">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.75 5.58 6.16.9-4.45 4.34 1.05 6.13L12 17.06l-5.51 2.89 1.05-6.13L3.09 9.48l6.16-.9L12 3Z"/></svg><span>STAR</span>
+              </a>
+              <button class="theme-toggle" id="themeToggle" type="button" aria-label="Ganti tema" title="Ganti tema">
+                <svg class="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 15.3A8.5 8.5 0 0 1 8.7 3.8 8.6 8.6 0 1 0 20.2 15.3Z"/></svg>
+                <svg class="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+              </button>
+            </div>
+            <span id="runStatus" class="visually-hidden" aria-live="polite">READY</span>
+          </div>
+          <div class="editor-wrap">
+            <div class="editor-bar">
+              <span class="editor-lights"><i></i><i></i><i></i></span>
+              <span>index.html</span>
+              <span>HTML</span>
+            </div>
+            <div class="code-stage">
+              <pre class="code-highlight" id="codeHighlight" aria-hidden="true"><code id="highlightCode"></code></pre>
+              <textarea id="htmlCode" class="code-editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="HTML code editor"><!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NEOCX — Hello</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;min-height:100%;overflow:hidden}
+    body{
+      min-height:100vh;display:grid;place-items:center;overflow:hidden;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+      color:#f5f3ff;background:#090b16;isolation:isolate
+    }
+    .scene{position:relative;width:100%;min-height:100vh;display:grid;place-items:center;
+      overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#222044 0%,#101326 42%,#090b16 78%)}
+    .glow{position:absolute;width:58vw;height:58vw;min-width:260px;min-height:260px;
+      border-radius:50%;filter:blur(70px);opacity:.32;animation:glowMove 8s ease-in-out infinite alternate}
+    .glow.one{background:#7865ff;left:-18%;top:-30%}
+    .glow.two{background:#29d9ce;right:-24%;bottom:-38%;animation-delay:-4s}
+    .grid{position:absolute;inset:-50%;opacity:.16;transform:perspective(500px) rotateX(62deg) scale(1.5);
+      background-image:linear-gradient(#8c83ff22 1px,transparent 1px),linear-gradient(90deg,#8c83ff22 1px,transparent 1px);
+      background-size:42px 42px;mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
+    .content{position:relative;z-index:2;text-align:center;padding:28px;width:min(100%,520px)}
+    .eyebrow{font-size:10px;letter-spacing:.42em;text-transform:uppercase;color:#82e7df;
+      font-weight:700;margin-bottom:24px;opacity:0;animation:fadeUp .8s .15s forwards}
+    .word-wrap{height:clamp(74px,18vw,112px);display:grid;place-items:center;position:relative}
+    .word{grid-area:1/1;font-size:clamp(48px,12vw,88px);font-weight:850;letter-spacing:-.075em;
+      line-height:1;white-space:nowrap;opacity:0;filter:blur(14px);transform:translateY(22px) scale(.94)}
+    .hello{animation:hello 5.2s cubic-bezier(.2,.7,.2,1) infinite}
+    .brand{background:linear-gradient(105deg,#fff 10%,#b5aaff 52%,#78e7df 92%);
+      color:transparent;background-clip:text;-webkit-background-clip:text;
+      text-shadow:0 0 42px #8a7cff38;animation:brand 5.2s cubic-bezier(.2,.7,.2,1) infinite}
+    .line{width:0;height:1px;margin:25px auto 19px;
+      background:linear-gradient(90deg,transparent,#8f82ff,#63e4dc,transparent);
+      box-shadow:0 0 16px #8f82ff;animation:line 5.2s ease-in-out infinite}
+    .caption{font-size:12px;letter-spacing:.18em;color:#aeb5cb;opacity:0;
+      animation:caption 5.2s ease-in-out infinite}
+    .ring{position:absolute;width:min(68vw,330px);aspect-ratio:1;border:1px solid #a99fff20;
+      border-radius:50%;animation:spin 22s linear infinite}
+    .ring:before,.ring:after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;
+      background:#83e9e0;box-shadow:0 0 18px #83e9e0}
+    .ring:before{top:16%;left:15%}.ring:after{right:12%;bottom:19%;background:#a99fff;box-shadow:0 0 18px #a99fff}
+    .pulse{position:absolute;width:clamp(180px,42vw,260px);aspect-ratio:1;border-radius:50%;
+      border:1px solid #a99fff22;animation:pulse 3s ease-out infinite}
+    .pulse:nth-of-type(2){animation-delay:1.5s}
+    @keyframes hello{0%,8%{opacity:0;filter:blur(14px);transform:translateY(22px) scale(.94)}
+      17%,34%{opacity:1;filter:blur(0);transform:translateY(0) scale(1)}
+      43%,100%{opacity:0;filter:blur(12px);transform:translateY(-18px) scale(1.04)}}
+    @keyframes brand{0%,42%{opacity:0;filter:blur(14px);transform:translateY(20px) scale(.94)}
+      53%,78%{opacity:1;filter:blur(0);transform:translateY(0) scale(1)}
+      89%,100%{opacity:0;filter:blur(12px);transform:translateY(-18px) scale(1.04)}}
+    @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+    @keyframes line{0%,15%{width:0;opacity:0}28%,72%{width:145px;opacity:1}88%,100%{width:0;opacity:0}}
+    @keyframes caption{0%,47%{opacity:0;transform:translateY(8px)}58%,78%{opacity:1;transform:translateY(0)}90%,100%{opacity:0}}
+    @keyframes glowMove{to{transform:translate(18%,22%) scale(1.2);opacity:.48}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulse{0%{transform:scale(.65);opacity:0}35%{opacity:.5}100%{transform:scale(1.45);opacity:0}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+  </style>
+</head>
+<body>
+  <main class="scene">
+    <div class="glow one"></div><div class="glow two"></div><div class="grid"></div>
+    <div class="ring"></div><div class="pulse"></div><div class="pulse"></div>
+    <section class="content">
+      <div class="eyebrow">A NEW CREATIVE SPACE</div>
+      <div class="word-wrap">
+        <div class="word hello">HELLO</div>
+        <div class="word brand">NEOCX</div>
+      </div>
+      <div class="line"></div>
+      <div class="caption">CREATE · BUILD · EXPERIENCE</div>
+    </section>
+  </main>
+  <script>
+    // PWA install flow and offline app-shell registration.
+    (() => {
+      const installButton = document.getElementById('installAppBtn');
+      let installPrompt = null;
+      const isStandalone = () =>
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
+
+      if (isStandalone()) {
+        installButton.title = 'NEOCX sudah terpasang';
+        installButton.setAttribute('aria-label', 'NEOCX sudah terpasang');
+        installButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg>';
+        installButton.disabled = true;
+      }
+
+      window.addEventListener('beforeinstallprompt', event => {
+        event.preventDefault();
+        installPrompt = event;
+        installButton.hidden = false;
+      });
+
+      window.addEventListener('appinstalled', () => {
+        installPrompt = null;
+        installButton.title = 'NEOCX berhasil diinstal';
+        installButton.setAttribute('aria-label', 'NEOCX berhasil diinstal');
+        installButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg>';
+        installButton.disabled = true;
+      });
+
+      installButton.addEventListener('click', async () => {
+        if (installPrompt) {
+          installPrompt.prompt();
+          await installPrompt.userChoice;
+          installPrompt = null;
+          installButton.hidden = true;
+          return;
+        }
+        if (isStandalone()) return;
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        alert(isIOS
+          ? 'Untuk memasang NEOCX: buka menu Share, lalu pilih Add to Home Screen.'
+          : 'Jika opsi instalasi belum muncul, buka menu browser lalu pilih Install app atau Tambahkan ke layar utama.');
+      });
+
+      if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(error => {
+            console.warn('NEOCX service worker registration failed:', error);
+          });
+        });
+      }
+    })();
+  </script>
+</body>
+</html></textarea>
+              <div class="code-loading" id="codeLoading"><span class="loading-spinner"></span><span>LOADING CODE...</span></div>
+            </div>
+          </div>
+          <div class="code-toolbar">
+            <div class="code-meta" aria-live="polite">
+              <span id="codeLineCount">0 baris</span>
+              <span class="code-meta-separator">·</span>
+              <span id="codeFileSize">0 B</span>
+            </div>
+            <div class="code-icon-actions" aria-label="Editor tools">
+              <button class="icon-tool active" id="editHtml" type="button" aria-label="Edit kode" title="Edit kode">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 4 4M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z"/><path d="M13.5 6.5 17.5 10.5"/></svg>
+              </button>
+              <button class="icon-tool" id="fileHtml" type="button" aria-label="Buka file HTML" title="Buka file HTML">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H10l2 2h7.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5v-10Z"/></svg>
+              </button>
+              <input id="htmlFileInput" type="file" accept=".html,.htm,text/html" hidden>
+              <button class="icon-tool" id="copyHtml" type="button" aria-label="Salin kode" title="Salin kode">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg>
+              </button>
+              <button class="icon-tool" id="pasteHtml" type="button" aria-label="Tempel kode" title="Tempel kode">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5.5V4.8A1.8 1.8 0 0 1 10.8 3h2.4A1.8 1.8 0 0 1 15 4.8v.7M9 12h6M9 16h6"/></svg>
+              </button>
+              <button class="icon-tool" id="clearHtml" type="button" aria-label="Bersihkan kode" title="Bersihkan kode">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+              </button>
+              <button class="icon-tool" id="resetHtml" type="button" aria-label="Reset kode" title="Reset kode">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a9 9 0 1 1 2.6 6.4"/><path d="M3 4v7h7"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="workspace-actions">
+            <button class="run-btn" id="runHtml" type="button">▶ RUN / PREVIEW HTML</button>
+          </div>
+          <div class="preview-output" id="previewOutput">
+            <div class="output-head">
+              <span>LIVE OUTPUT</span>
+              <span class="output-head-right"><span id="outputStatus">WAITING</span><button class="fullscreen-btn" id="fullscreenPreview" type="button">⛶ FULL SCREEN</button></span>
+            </div>
+            <iframe id="htmlPreview" class="output-frame" title="HTML live preview" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads"></iframe>
+          </div>
+          <p class="workspace-note">Jalankan kode dengan tombol RUN atau Ctrl + Enter. Kode berjalan di area preview terisolasi.</p>
+          <section class="history-panel" aria-label="Riwayat preview">
+            <div class="history-head">
+              <div><span class="history-title">PREVIEW HISTORY</span><span class="history-count" id="historyCount">0</span></div>
+              <button class="history-clear" id="clearHistoryBtn" type="button" disabled>HAPUS HISTORY</button>
+            </div>
+            <div class="history-list" id="historyList" aria-live="polite"><div class="history-empty">Belum ada riwayat preview.</div></div>
+          </section>
+        </section>
+      </section>
+    </main>
+    <footer>NEOCX PREVIEW <span aria-hidden="true">&nbsp;·&nbsp;</span> BUILD 01</footer>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      // Anti-browser interaction guards for WebView preview.
+      const block = event => event.preventDefault();
+      const isEditorTarget = target => !!(target && target.closest && target.closest('.code-editor'));
+      ['contextmenu', 'copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(type =>
+        document.addEventListener(type, event => {
+          if (!isEditorTarget(event.target)) block(event);
+        }, { passive: false })
+      );
+
+      document.addEventListener('keydown', event => {
+        const key = event.key.toLowerCase();
+        const blocked =
+          key === 'f12' ||
+          (event.ctrlKey && ['+', '-', '=', '0', 'u', 's', 'p'].includes(key)) ||
+          (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(key)) ||
+          (event.metaKey && ['+', '-', '=', '0'].includes(key));
+        if (blocked && !isEditorTarget(event.target)) block(event);
+        if (isEditorTarget(event.target) && event.ctrlKey && key === 'enter') {
+          event.preventDefault();
+          runHtml();
+        }
+      }, { passive: false });
+
+      document.addEventListener('wheel', event => {
+        if (event.ctrlKey) block(event);
+      }, { passive: false });
+
+      // Dark / warm cream theme switch, persisted locally.
+      const themeToggle = document.getElementById('themeToggle');
+      const savedTheme = localStorage.getItem('neocx-theme');
+      if (savedTheme === 'cream') document.documentElement.dataset.theme = 'cream';
+      themeToggle.addEventListener('click', () => {
+        const cream = document.documentElement.dataset.theme !== 'cream';
+        if (cream) document.documentElement.dataset.theme = 'cream';
+        else delete document.documentElement.dataset.theme;
+        localStorage.setItem('neocx-theme', cream ? 'cream' : 'dark');
+        themeToggle.setAttribute('aria-label', cream ? 'Aktifkan tema gelap' : 'Aktifkan tema cream');
+        themeToggle.title = cream ? 'Tema cream aktif' : 'Tema gelap aktif';
+      });
+      themeToggle.title = savedTheme === 'cream' ? 'Tema cream aktif' : 'Ganti ke tema cream';
+
+      // HTML workspace runner: render submitted markup in an isolated iframe.
+      const editor = document.getElementById('htmlCode');
+      const preview = document.getElementById('htmlPreview');
+      const runStatus = document.getElementById('runStatus');
+      const outputStatus = document.getElementById('outputStatus');
+      const initialCode = editor.value;
+      const editButton = document.getElementById('editHtml');
+      const copyButton = document.getElementById('copyHtml');
+      const fileButton = document.getElementById('fileHtml');
+      const pasteButton = document.getElementById('pasteHtml');
+      const fileInput = document.getElementById('htmlFileInput');
+      const highlightCode = document.getElementById('highlightCode');
+      const highlightLayer = document.getElementById('codeHighlight');
+      const codeLoading = document.getElementById('codeLoading');
+      const codeLineCount = document.getElementById('codeLineCount');
+      const codeFileSize = document.getElementById('codeFileSize');
+      let loadingTimer = 0;
+      const HISTORY_KEY = 'neocx-preview-history-v1';
+      const HISTORY_LIMIT = 12;
+      const HISTORY_CODE_LIMIT = 180000;
+      const historyList = document.getElementById('historyList');
+      const historyCount = document.getElementById('historyCount');
+      const clearHistoryButton = document.getElementById('clearHistoryBtn');
+      let previewHistory = loadPreviewHistory();
+
+      function loadPreviewHistory() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+          return Array.isArray(saved) ? saved.filter(item => item && typeof item.code === 'string' && typeof item.date === 'number').slice(0, HISTORY_LIMIT) : [];
+        } catch (_) { return []; }
+      }
+
+      function savePreviewHistory() {
+        try { localStorage.setItem(HISTORY_KEY, JSON.stringify(previewHistory)); return true; }
+        catch (_) {
+          previewHistory = previewHistory.slice(0, Math.max(1, previewHistory.length - 2));
+          try { localStorage.setItem(HISTORY_KEY, JSON.stringify(previewHistory)); return true; } catch (_) { return false; }
+        }
+      }
+
+      function getPreviewTitle(code) {
+        const match = code.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+        const title = match ? match[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() : '';
+        return (title || 'Preview HTML').slice(0, 72);
+      }
+
+      function renderPreviewHistory() {
+        historyCount.textContent = String(previewHistory.length);
+        clearHistoryButton.disabled = previewHistory.length === 0;
+        historyList.replaceChildren();
+        if (!previewHistory.length) {
+          const empty = document.createElement('div');
+          empty.className = 'history-empty';
+          empty.textContent = 'Belum ada riwayat preview.';
+          historyList.appendChild(empty);
+          return;
+        }
+        previewHistory.forEach((item, index) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'history-item';
+          button.setAttribute('aria-label', `Buka riwayat ${item.title || 'Preview HTML'}`);
+          const main = document.createElement('span');
+          main.className = 'history-item-main';
+          const name = document.createElement('span');
+          name.className = 'history-item-name';
+          name.textContent = item.title || 'Preview HTML';
+          const date = document.createElement('span');
+          date.className = 'history-item-date';
+          date.textContent = new Date(item.date).toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' });
+          const size = document.createElement('span');
+          size.className = 'history-item-size';
+          size.textContent = formatFileSize(new Blob([item.code]).size);
+          main.append(name, date);
+          button.append(main, size);
+          button.addEventListener('click', () => restorePreviewHistory(index));
+          historyList.appendChild(button);
+        });
+      }
+
+      function addPreviewHistory(code) {
+        if (!code.trim()) return;
+        if (code.length > HISTORY_CODE_LIMIT) {
+          runStatus.textContent = 'PREVIEW NOT SAVED TO HISTORY (FILE TOO LARGE)';
+          return;
+        }
+        previewHistory.unshift({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, title:getPreviewTitle(code), date:Date.now(), code });
+        previewHistory = previewHistory.slice(0, HISTORY_LIMIT);
+        if (!savePreviewHistory()) runStatus.textContent = 'HISTORY STORAGE FULL';
+        renderPreviewHistory();
+      }
+
+      function restorePreviewHistory(index) {
+        const item = previewHistory[index];
+        if (!item) return;
+        editor.value = item.code;
+        refreshHighlight();
+        setEditorMode(true);
+        preview.srcdoc = item.code;
+        runStatus.textContent = 'HISTORY RESTORED';
+        outputStatus.textContent = 'HISTORY PREVIEW';
+      }
+
+      clearHistoryButton.addEventListener('click', () => {
+        if (!previewHistory.length || !window.confirm('Hapus semua riwayat preview?')) return;
+        previewHistory = [];
+        try { localStorage.removeItem(HISTORY_KEY); } catch (_) {}
+        renderPreviewHistory();
+      });
+      renderPreviewHistory();
+
+      function formatFileSize(bytes) {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+      }
+
+      function refreshCodeMeta() {
+        const code = editor.value;
+        const lines = code.length ? code.split('\n').length : 0;
+        const bytes = new Blob([code]).size;
+        codeLineCount.textContent = `${lines.toLocaleString('id-ID')} baris`;
+        codeFileSize.textContent = formatFileSize(bytes);
+      }
+
+      function escapeCode(value) {
+        return value.replace(/[&<>]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[char]));
+      }
+
+      function highlightMarkup(source) {
+        const tokens = /(<!--[\s\S]*?-->|\/\*[\s\S]*?\*\/|\/\/[^\n]*|<!doctype\b[^>]*>|<\/?[a-zA-Z][^>]*>|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|\b(?:const|let|var|function|return|if|else|for|while|new|class|async|await|true|false|null|undefined|import|export|default|from|try|catch|throw|this|typeof|instanceof)\b|\b\d+(?:\.\d+)?\b)/gi;
+        let result = '';
+        let last = 0;
+        let match;
+        while ((match = tokens.exec(source)) !== null) {
+          result += escapeCode(source.slice(last, match.index));
+          const token = match[0];
+          let className = 'tok-keyword';
+          if (token.startsWith('<!--') || token.startsWith('/*') || token.startsWith('//')) {
+            className = 'tok-comment';
+          } else if (/^<!doctype/i.test(token)) {
+            className = 'tok-doctype';
+          } else if (/^<\/?[a-z]/i.test(token)) {
+            const tagName = token.match(/^<\/?[\w-]+/);
+            const tag = tagName ? `<span class="tok-tag">${escapeCode(tagName[0])}</span>` : '';
+            const rest = tagName ? token.slice(tagName[0].length, token.length - (token.endsWith('>') ? 1 : 0)) : token;
+            const attrs = escapeCode(rest).replace(/([\w:-]+)(=)("[^"]*"|'[^']*')/g,
+              '<span class="tok-attr">$1</span><span class="tok-punctuation">$2</span><span class="tok-string">$3</span>');
+            result += tag + attrs + (token.endsWith('>') ? '<span class="tok-punctuation">&gt;</span>' : '');
+            last = tokens.lastIndex;
+            continue;
+          } else if (/^["'`]/.test(token)) {
+            className = 'tok-string';
+          } else if (/^\d/.test(token)) {
+            className = 'tok-number';
+          }
+          result += `<span class="${className}">${escapeCode(token)}</span>`;
+          last = tokens.lastIndex;
+        }
+        result += escapeCode(source.slice(last));
+        return result + (source.endsWith('\n') ? ' ' : '\n ');
+      }
+      function refreshHighlight() {
+        highlightCode.innerHTML = highlightMarkup(editor.value);
+        refreshCodeMeta();
+        highlightLayer.scrollTop = editor.scrollTop;
+        highlightLayer.scrollLeft = editor.scrollLeft;
+      }
+
+      function showCodeLoading() {
+        codeLoading.classList.add('show');
+        runStatus.textContent = 'LOADING...';
+        window.clearTimeout(loadingTimer);
+        loadingTimer = window.setTimeout(() => {
+          refreshHighlight();
+          codeLoading.classList.remove('show');
+          runStatus.textContent = 'CODE READY';
+        }, 220);
+      }
+
+      function setEditorMode(editing) {
+        editor.readOnly = !editing;
+        editButton.classList.toggle('active', editing);
+        editButton.setAttribute('aria-label', editing ? 'Selesai edit kode' : 'Edit kode');
+        editButton.title = editing ? 'Selesai edit kode' : 'Edit kode';
+        editor.style.opacity = editing ? '1' : '.82';
+        if (editing) editor.focus();
+      }
+
+      async function copyEditorCode() {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(editor.value);
+          } else {
+            editor.focus();
+            editor.select();
+            const copied = document.execCommand('copy');
+            editor.setSelectionRange(0, 0);
+            if (!copied) throw new Error('Clipboard unavailable');
+          }
+          copyButton.title = 'Kode tersalin';
+          copyButton.setAttribute('aria-label', 'Kode tersalin');
+          window.setTimeout(() => {
+            copyButton.title = 'Salin kode';
+            copyButton.setAttribute('aria-label', 'Salin kode');
+          }, 1200);
+        } catch (_) {
+          copyButton.title = 'Gagal menyalin kode';
+          copyButton.setAttribute('aria-label', 'Gagal menyalin kode');
+          window.setTimeout(() => {
+            copyButton.title = 'Salin kode';
+            copyButton.setAttribute('aria-label', 'Salin kode');
+          }, 1200);
+        }
+      }
+
+      editor.addEventListener('paste', () => {
+        codeLoading.classList.add('show');
+        runStatus.textContent = 'LOADING CODE...';
+        window.clearTimeout(loadingTimer);
+        loadingTimer = window.setTimeout(() => {
+          refreshHighlight();
+          codeLoading.classList.remove('show');
+          runStatus.textContent = 'CODE READY';
+        }, 350);
+      });
+      editor.addEventListener('input', () => {
+        refreshHighlight();
+        if (!codeLoading.classList.contains('show')) runStatus.textContent = 'CODE READY';
+      });
+      editor.addEventListener('scroll', () => {
+        highlightLayer.scrollTop = editor.scrollTop;
+        highlightLayer.scrollLeft = editor.scrollLeft;
+      });
+
+
+      pasteButton.addEventListener('click', async () => {
+        try {
+          if (!navigator.clipboard || typeof navigator.clipboard.readText !== 'function') {
+            throw new Error('Clipboard read unavailable');
+          }
+          const pasted = await navigator.clipboard.readText();
+          if (!pasted) return;
+          editor.value = pasted;
+          setEditorMode(true);
+          refreshHighlight();
+          runStatus.textContent = 'CODE PASTED';
+          codeLoading.classList.add('show');
+          window.clearTimeout(loadingTimer);
+          loadingTimer = window.setTimeout(() => {
+            refreshHighlight();
+            codeLoading.classList.remove('show');
+            runStatus.textContent = 'CODE READY';
+          }, 220);
+        } catch (_) {
+          runStatus.textContent = 'PASTE DENIED';
+          pasteButton.title = 'Izin clipboard tidak tersedia';
+          pasteButton.setAttribute('aria-label', 'Izin clipboard tidak tersedia');
+          window.setTimeout(() => {
+            pasteButton.title = 'Tempel kode';
+            pasteButton.setAttribute('aria-label', 'Tempel kode');
+          }, 1400);
+        }
+      });
+
+      fileButton.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        if (!/\.html?$/i.test(file.name) && file.type !== 'text/html') {
+          runStatus.textContent = 'INVALID FILE';
+          fileInput.value = '';
+          return;
+        }
+        codeLoading.classList.add('show');
+        runStatus.textContent = 'LOADING FILE...';
+        setEditorMode(true);
+        try {
+          const contents = typeof file.text === 'function'
+            ? await file.text()
+            : await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || ''));
+                reader.onerror = () => reject(reader.error || new Error('File read failed'));
+                reader.readAsText(file);
+              });
+          editor.value = contents;
+          refreshHighlight();
+          runStatus.textContent = 'FILE LOADED';
+          fileButton.title = `File dimuat: ${file.name}`;
+          fileButton.setAttribute('aria-label', `File dimuat: ${file.name}`);
+          window.setTimeout(() => {
+            fileButton.title = 'Buka file HTML';
+            fileButton.setAttribute('aria-label', 'Buka file HTML');
+          }, 1300);
+        } catch (_) {
+          runStatus.textContent = 'FILE ERROR';
+        } finally {
+          codeLoading.classList.remove('show');
+          fileInput.value = '';
+        }
+      });
+
+      function runHtml(saveHistory = true) {
+        const code = editor.value;
+        preview.srcdoc = code;
+        runStatus.textContent = 'RUNNING';
+        outputStatus.textContent = 'RENDERED';
+        if (saveHistory) addPreviewHistory(code);
+        window.setTimeout(() => {
+          if (runStatus.textContent === 'RUNNING') runStatus.textContent = 'READY';
+        }, 450);
+      }
+
+      document.getElementById('runHtml').addEventListener('click', runHtml);
+      editButton.addEventListener('click', () => setEditorMode(editor.readOnly));
+      copyButton.addEventListener('click', copyEditorCode);
+      document.getElementById('clearHtml').addEventListener('click', () => {
+        editor.value = '';
+        refreshHighlight();
+        preview.srcdoc = '<!doctype html><html><body style="margin:0;background:#fff"></body></html>';
+        runStatus.textContent = 'CLEARED';
+        outputStatus.textContent = 'EMPTY';
+        setEditorMode(true);
+      });
+      document.getElementById('resetHtml').addEventListener('click', () => {
+        editor.value = initialCode;
+        refreshHighlight();
+        setEditorMode(true);
+        runHtml();
+      });
+      const outputPanel = document.getElementById('previewOutput');
+      const fullscreenButton = document.getElementById('fullscreenPreview');
+      const outputPlaceholder = document.createComment('NEOCX_OUTPUT_POSITION');
+
+      function setOutputFullscreen(enabled) {
+        if (enabled) {
+          if (outputPanel.parentNode !== document.body) {
+            outputPanel.parentNode.insertBefore(outputPlaceholder, outputPanel);
+            document.body.appendChild(outputPanel);
+          }
+          outputPanel.classList.add('is-fullscreen');
+          document.body.classList.add('output-fullscreen');
+          outputPanel.scrollTop = 0;
+        } else {
+          outputPanel.classList.remove('is-fullscreen');
+          document.body.classList.remove('output-fullscreen');
+          if (outputPlaceholder.parentNode) {
+            outputPlaceholder.parentNode.insertBefore(outputPanel, outputPlaceholder);
+            outputPlaceholder.remove();
+          }
+        }
+        fullscreenButton.textContent = enabled ? '✕ EXIT' : '⛶ FULL SCREEN';
+        outputStatus.textContent = enabled ? 'FULLSCREEN' : 'RENDERED';
+      }
+
+      fullscreenButton.addEventListener('click', async () => {
+        const active = outputPanel.classList.contains('is-fullscreen');
+        if (active) {
+          setOutputFullscreen(false);
+          if (document.fullscreenElement && document.exitFullscreen) {
+            try { await document.exitFullscreen(); } catch (_) {}
+          }
+          return;
+        }
+
+        // Move the preview outside transformed layout ancestors before filling
+        // the viewport. This keeps fullscreen centered in Android WebView too.
+        setOutputFullscreen(true);
+        if (outputPanel.requestFullscreen) {
+          try {
+            await outputPanel.requestFullscreen();
+          } catch (_) {
+            // CSS fullscreen remains active as a fallback.
+          }
+        }
+      });
+
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && outputPanel.classList.contains('is-fullscreen')) {
+          setOutputFullscreen(false);
+        }
+      });
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && outputPanel.classList.contains('is-fullscreen')) {
+          setOutputFullscreen(false);
+        }
+      });
+      editor.addEventListener('keydown', event => {
+        if (event.key === 'Tab') {
+          event.preventDefault();
+          const start = editor.selectionStart;
+          const end = editor.selectionEnd;
+          editor.setRangeText('  ', start, end, 'end');
+        }
+      });
+      refreshHighlight();
+      setEditorMode(false);
+      runHtml(false);
+
+      // Lightweight ambient canvas animation using requestAnimationFrame.
+      const canvas = document.getElementById('ambient');
+      const ctx = canvas.getContext('2d', { alpha: true });
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let width = 0, height = 0, dpr = 1, particles = [], raf = 0, previous = 0;
+
+      function resize() {
+        dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const count = Math.min(34, Math.max(14, Math.floor(width * height / 36000)));
+        particles = Array.from({ length: count }, () => ({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: .6 + Math.random() * 1.2,
+          a: .12 + Math.random() * .24,
+          v: 3 + Math.random() * 7
+        }));
+      }
+
+      function draw(timestamp) {
+        if (document.hidden) { raf = 0; return; }
+        const dt = Math.min((timestamp - (previous || timestamp)) / 1000, .032);
+        previous = timestamp;
+        ctx.clearRect(0, 0, width, height);
+        for (const p of particles) {
+          p.y -= p.v * dt;
+          if (p.y < -4) { p.y = height + 4; p.x = Math.random() * width; }
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          const creamTheme = document.documentElement.dataset.theme === 'cream';
+          ctx.fillStyle = creamTheme
+            ? `rgba(118, 102, 189, ${p.a * .72})`
+            : `rgba(155, 147, 255, ${p.a})`;
+          ctx.fill();
+        }
+        raf = requestAnimationFrame(draw);
+      }
+
+      function start() {
+        if (!reduceMotion && !document.hidden && !raf) {
+          previous = 0;
+          raf = requestAnimationFrame(draw);
+        }
+      }
+      function stop() {
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+      }
+
+      resize();
+      start();
+      window.addEventListener('resize', resize, { passive: true });
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stop();
+        else start();
+      });
+    })();
+  </script>
+</body>
+</html>

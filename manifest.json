@@ -1,0 +1,38 @@
+{
+  "id": "./",
+  "name": "NEOCX — HTML Workspace",
+  "short_name": "NEOCX",
+  "description": "Ruang kerja HTML interaktif untuk menulis, menjalankan, dan melihat preview HTML secara langsung.",
+  "lang": "id-ID",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090b12",
+  "theme_color": "#090b12",
+  "categories": [
+    "developer",
+    "utilities",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
